@@ -3,6 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService} from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SmartbillModule } from './smartbill/smartbill.module';
+import { TrendyolController } from './trendyol/trendyol.controller';
+import { TrendyolModule } from './trendyol/trendyol.module';
 
 @Module({
   imports: [
@@ -16,7 +19,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
       }),
-    })
+    }),
+    SmartbillModule,
+    TrendyolModule
   ],
   controllers: [AppController],
   providers: [AppService],
