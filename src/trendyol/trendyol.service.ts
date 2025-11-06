@@ -3,6 +3,7 @@ import { TrendyolOrderDto } from './dto/trendyol-order.dto';
 import axios, { AxiosInstance } from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { TrendyolOrderResponseDto } from './dto/trendyol-order-response.dto';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class TrendyolService {
@@ -33,9 +34,14 @@ export class TrendyolService {
     const clientId = this.config.get<number>('TRENDYOL_API_ID') || 0;
     const apiKey = this.config.get<string>('TRENDYOL_API_KEY') || "";
     const apiSecret = this.config.get<string>('TRENDYOL_API_SECRET') || "";
-    const startDate = "1757203200000";
-    const endDate = "1755993600000";
-    const url = `/order/sellers/${clientId}/orders?size=200&page=0&endDate=${startDate}&startDate=${endDate}`;
+    // Aktuelle Zeit in Europa/Bucharest
+    const now = DateTime.now().setZone('Europe/Bucharest');
+    // Fünf Tage früher, Mitternacht (erste Minute des Tages)
+    const fiveDaysAgo = now.minus({ days: 5 }).startOf('day');
+
+    const endDate = now.toMillis();         // aktuelle Zeit in ms
+    const startDate = fiveDaysAgo.toMillis(); // 00:00 vor 5 Tagen
+    const url = `/order/sellers/${clientId}/orders?size=200&page=0&startDate=${startDate}&endDate=${endDate}`;
     const response = await this.client.get(url, this.getHttpConfig(apiKey, apiSecret));
     const responseJson: TrendyolOrderResponseDto = response.data;
     const data = responseJson.content;

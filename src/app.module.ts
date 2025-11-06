@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService} from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SmartbillModule } from './smartbill/smartbill.module';
-import { TrendyolController } from './trendyol/trendyol.controller';
 import { TrendyolModule } from './trendyol/trendyol.module';
 
 @Module({
