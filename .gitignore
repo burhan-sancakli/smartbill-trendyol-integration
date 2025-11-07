@@ -23,5 +23,9 @@ lerna-debug.log*
 .temp
 .tmp
 
+# Operating system specific
+.DS_Store
+
 # db directory
 /data
+
