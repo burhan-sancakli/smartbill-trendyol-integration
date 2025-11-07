@@ -1,43 +1,7 @@
-import { IsString, IsOptional, IsInt, IsBoolean } from "class-validator";
+import { IsString, IsOptional, IsInt, IsBoolean, IsNumber } from "class-validator";
+import { RequestSmartbillProductDto } from "./request-smartbill-product.dto";
 
-export class SmartbillProductDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  code: string;
-
-  @IsOptional()
-  @IsString()
-  productDescription?: string;
-
-  @IsInt()
-  quantity: number;
-
-  @IsInt()
-  price: number;
-
-  @IsBoolean()
-  isDiscount: boolean;
-
-  @IsBoolean()
-  isTaxIncluded: boolean;
-
-  @IsString()
-  measuringUnitName: string;
-
-  @IsString()
-  currency: string;
-
-  @IsString()
-  taxName: string;
-
-  @IsInt()
-  taxPercentage: number;
-
-  @IsBoolean()
-  isService: boolean;
-
+export class SmartbillProductDto extends RequestSmartbillProductDto {
   @IsBoolean()
   saveToDb: boolean;
 }

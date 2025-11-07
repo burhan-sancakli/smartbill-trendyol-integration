@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ValidateNested, IsString, IsNumber, IsBoolean } from "class-validator";
+import { ValidateNested, IsString, IsNumber, IsBoolean, IsOptional } from "class-validator";
 import { AddressDto } from "./trendyol-address.dto";
 import { LineItemDto } from "./trendyol-line-item.dto";
 import { PackageHistoryDto } from "./trendyol-package-history.dto";
@@ -22,6 +22,19 @@ export class TrendyolOrderDto {
   @ApiProperty()
   @IsNumber()
   grossAmount: number;
+
+  @ApiProperty()
+  @IsNumber()
+  totalDiscount: number;
+
+  @ApiProperty()
+  @IsNumber()
+  totalTyDiscount: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  taxNumber?: string;
 
   @ApiProperty()
   @IsNumber()
@@ -66,6 +79,10 @@ export class TrendyolOrderDto {
 
   @ApiProperty()
   @IsString()
+  identityNumber: string;
+
+  @ApiProperty()
+  @IsString()
   status: string;
 
   @ApiProperty({ type: [PackageHistoryDto] })
@@ -80,6 +97,18 @@ export class TrendyolOrderDto {
   @ApiProperty()
   @IsBoolean()
   fastDelivery: boolean;
+
+  @ApiProperty()
+  @IsNumber()
+  originShipmentDate: number;
+
+  @ApiProperty()
+  @IsNumber()
+  estimatedDeliveryStartDate: number;
+
+  @ApiProperty()
+  @IsNumber()
+  estimatedDeliveryEndDate: number;
 
   @ApiProperty()
   @IsBoolean()

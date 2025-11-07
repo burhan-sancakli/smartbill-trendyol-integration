@@ -5,14 +5,34 @@ import { TrendyolOrderDto } from './dto/trendyol-order.dto';
 @Controller('trendyol')
 export class TrendyolController {
   constructor(private readonly trendyolService: TrendyolService) {}
-  
-  @Get('order')
-  getOrders() {
-    return this.trendyolService.getOrders();
+
+  @Get('order/smartbill')
+  getOrdersForSmartbill() {
+    return this.trendyolService.getOrdersForSmartbill();
+  }
+
+  @Post('order/smartbill')
+  generateOrdersForSmartbill() {
+    return this.trendyolService.generateOrdersForSmartbill();
+  }
+
+  @Get('order/:id/smartbill')
+  getOrderForSmartbill(@Param('id') id: string) {
+    return this.trendyolService.getOrderForSmartbill(id);
+  }
+
+  @Post('order/:id/smartbill')
+  generateOrderForSmartbill(@Param('id') id: string) {
+    return this.trendyolService.generateOrderForSmartbill(id);
   }
 
   @Get('order/:id')
   getOrder(@Param('id') id: string) {
-    return this.trendyolService.getOrder(+id);
+    return this.trendyolService.getOrder(id);
+  }
+
+  @Get('order')
+  getOrders() {
+    return this.trendyolService.getOrders();
   }
 }

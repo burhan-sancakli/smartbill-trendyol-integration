@@ -1,30 +1,7 @@
 import { IsString, IsBoolean, IsEmail } from "class-validator";
+import { RequestSmartbillClientDto } from "./request-smartbill-client.dto";
 
-export class SmartbillClientDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  vatCode: string;
-
-  @IsString()
-  address: string;
-
-  @IsBoolean()
-  isTaxPayer: boolean;
-
-  @IsString()
-  city: string;
-
-  @IsString()
-  county: string;
-
-  @IsString()
-  country: string;
-
-  @IsEmail()
-  email: string;
-
+export class SmartbillClientDto extends RequestSmartbillClientDto {
   @IsBoolean()
   saveToDb: boolean;
 }

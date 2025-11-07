@@ -38,6 +38,10 @@ export class AddressDto {
   @IsOptional()
   district?: string;
 
+  @ApiProperty()
+  @IsString()
+  countyName: string;
+
   @ApiProperty({ type: AddressLinesDto })
   @ValidateNested()
   @Type(() => AddressLinesDto)
@@ -53,13 +57,11 @@ export class AddressDto {
 
   @ApiProperty()
   @IsString()
-  @IsOptional()
-  fullAddress?: string;
+  fullAddress: string;
 
   @ApiProperty()
   @IsString()
-  @IsOptional()
-  fullName?: string;
+  fullName: string;
 }
 
 function Type(arg0: () => any): (target: AddressDto, propertyKey: "addressLines") => void {

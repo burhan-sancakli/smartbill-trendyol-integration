@@ -2,55 +2,29 @@ import { IsString, ValidateNested, IsBoolean, IsDateString, IsArray, IsInt, IsOp
 import { SmartbillClientDto } from "./smartbill-client.dto";
 import { SmartbillProductDto } from "./smartbill-product.dto";
 import { Type } from "class-transformer";
+import { RequestSmartbillInvoiceDto } from "./request-smartbill-invoice.dto";
 
-export class SmartbillInvoiceDto {
+export class SmartbillInvoiceDto extends RequestSmartbillInvoiceDto {
   @IsString()
   companyVatCode: string;
 
   @ValidateNested()
   @Type(() => SmartbillClientDto)
-  client: SmartbillClientDto;
+  declare client: SmartbillClientDto;
 
   @IsBoolean()
   isDraft: boolean;
 
-  @IsDateString()
-  issueDate: string;
-
-  @IsDateString()
-  dueDate: string;
-
-  @IsDateString()
-  deliveryDate: string;
+  @IsString()
+  seriesName: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SmartbillProductDto)
-  products: SmartbillProductDto[];
-
-  @IsString()
-  currency: string;
-
-  @IsString()
-  language: string;
-
-  @IsInt()
-  precision: number;
+  declare products: SmartbillProductDto[];
 
   @IsString()
   issuerName: string;
-
-  @IsOptional()
-  @IsString()
-  aviz?: string;
-
-  @IsOptional()
-  @IsString()
-  observations?: string;
-
-  @IsOptional()
-  @IsString()
-  mentions?: string;
 
   @IsBoolean()
   useStock: boolean;

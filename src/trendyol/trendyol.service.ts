@@ -4,12 +4,16 @@ import axios, { AxiosInstance } from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { TrendyolOrderResponseDto } from './dto/trendyol-order-response.dto';
 import { DateTime } from 'luxon';
+import { RequestSmartbillInvoiceDto } from 'src/smartbill/dto/request-smartbill-invoice.dto';
+import { TrendyolSmartbillInvoiceAdapter } from './adapters/trendyol-smartbill-invoice.adapter';
+import { SmartbillService } from 'src/smartbill/smartbill.service';
 
 @Injectable()
 export class TrendyolService {
   private readonly config: ConfigService;
   private readonly client: AxiosInstance;
-  constructor(config: ConfigService) {
+  private readonly smartbill: SmartbillService;
+  constructor(config: ConfigService, smartbill: SmartbillService) {
     this.config = config; 
     this.client = axios.create({
       baseURL: this.config.get<string>('TRENDYOL_BASE_URL'),
@@ -18,6 +22,7 @@ export class TrendyolService {
       },
       timeout: 5000,
     });
+    this.smartbill = smartbill;
   }
 
 
@@ -44,11 +49,12 @@ export class TrendyolService {
     const url = `/order/sellers/${clientId}/orders?size=200&page=0&startDate=${startDate}&endDate=${endDate}`;
     const response = await this.client.get(url, this.getHttpConfig(apiKey, apiSecret));
     const responseJson: TrendyolOrderResponseDto = response.data;
-    const data = responseJson.content;
+    const excludedOrderNumbers = ["10659296402","10659256077"]
+    const data = responseJson.content.filter((item)=>!excludedOrderNumbers.includes(item.orderNumber));
     return data;
   }
 
- async getOrder(id: number): Promise<TrendyolOrderDto | undefined> {
+  async getOrder(id: string): Promise<TrendyolOrderDto | undefined> {
     const clientId = this.config.get<number>('TRENDYOL_API_ID') || 0;
     const apiKey = this.config.get<string>('TRENDYOL_API_KEY') || "";
     const apiSecret = this.config.get<string>('TRENDYOL_API_SECRET') || "";
@@ -57,5 +63,38 @@ export class TrendyolService {
     const responseJson: TrendyolOrderResponseDto = response.data;
     const data = responseJson.content.at(0)
     return data;
+  }
+
+  async getOrdersForSmartbill(): Promise<RequestSmartbillInvoiceDto[]> {
+    const trendyolOrders = await this.getOrders();
+    const smartbillOrders = trendyolOrders.map((trendyolOrder)=>TrendyolSmartbillInvoiceAdapter.toInternal(trendyolOrder));
+    return smartbillOrders;
+  }
+
+  async getOrderForSmartbill(id: string): Promise<RequestSmartbillInvoiceDto | undefined> {
+    const trendyolOrder = await this.getOrder(id);
+    if(!trendyolOrder){
+      return undefined;
+    }
+    const smartbillOrder = TrendyolSmartbillInvoiceAdapter.toInternal(trendyolOrder);
+    return smartbillOrder;
+  }
+
+  async generateOrdersForSmartbill(): Promise<RequestSmartbillInvoiceDto[]> {
+    const smartbillOrders = await this.getOrdersForSmartbill();
+    for(var key in smartbillOrders){
+      const smartbillOrder = smartbillOrders[key];
+      const result = await this.smartbill.createInvoice(smartbillOrder);
+    }
+    return smartbillOrders;
+  }
+
+  async generateOrderForSmartbill(id: string): Promise<RequestSmartbillInvoiceDto | undefined> {
+    const smartbillOrder = await this.getOrderForSmartbill(id);
+    if(!smartbillOrder){
+      return undefined;
+    }
+    const result = await this.smartbill.createInvoice(smartbillOrder);
+    return smartbillOrder;
   }
 }

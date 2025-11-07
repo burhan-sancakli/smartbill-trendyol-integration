@@ -4,6 +4,8 @@ import { SmartbillInvoiceDto } from './dto/smartbill-invoice.dto';
 import { ConfigService } from '@nestjs/config';
 import { TaxDto } from './dto/smartbill-tax.dto';
 import { SmartbillTaxesResponseDto } from './dto/smartbill-tax-response.dto';
+import { RequestSmartbillInvoiceDto } from './dto/request-smartbill-invoice.dto';
+import { SmartbillInvoiceAdapter } from './adapters/smartbill-invoice.adapter';
 @Injectable()
 export class SmartbillService {
   private readonly config: ConfigService;
@@ -41,11 +43,16 @@ export class SmartbillService {
     return Buffer.from(response.data);
   }
 
-  async createInvoice(requestDto: SmartbillInvoiceDto): Promise<any>  {
-    const cif = this.config.get<string>('SMARTBILL_VAT_CODE') || "";
+  async createInvoice(requestDto: RequestSmartbillInvoiceDto): Promise<any>  {
+    const cif = this.config.get<string>('SMARTBILL_VAT_CODE') || ""
+    const issuerName = this.config.get<string>('SMARTBILL_COMPANY_NAME') || "";
     const seriesName = this.config.get<string>('SMARTBILL_SERIES_NAME') || "";
     const url = `/invoice`;
-    const response = await this.client.post(url,requestDto);
+    const smartbillInvoiceDto = SmartbillInvoiceAdapter.toInternal(requestDto, {
+      companyVatCode: cif, issuerName: issuerName, seriesName: seriesName
+    });
+   
+    const response = await this.client.post(url,smartbillInvoiceDto);
     return response.data;
   }
 

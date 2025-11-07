@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Header, Res } from '
 import express from 'express';
 import { SmartbillService } from './smartbill.service';
 import { SmartbillInvoiceDto } from './dto/smartbill-invoice.dto';
+import { RequestSmartbillInvoiceDto } from './dto/request-smartbill-invoice.dto';
 
 @Controller('smartbill')
 export class SmartbillController {
@@ -22,7 +23,7 @@ export class SmartbillController {
   }
 
   @Post()
-  create(@Body() smartbillInvoiceDto: SmartbillInvoiceDto) {
+  create(@Body() smartbillInvoiceDto: RequestSmartbillInvoiceDto) {
     return this.smartbillService.createInvoice(smartbillInvoiceDto);
   }
 }

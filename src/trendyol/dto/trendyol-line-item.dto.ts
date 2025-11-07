@@ -19,6 +19,22 @@ export class LineItemDto {
   @IsString()
   merchantSku: string;
 
+  @ApiProperty()
+  @IsNumber()
+  merchantId: number;
+
+  @ApiProperty()
+  @IsNumber()
+  amount: number;
+
+  @ApiProperty()
+  @IsNumber()
+  discount: number;
+
+  @ApiProperty()
+  @IsNumber()
+  tyDiscount: number;
+
   @ApiProperty({ type: [DiscountDetailDto] })
   @IsArray()
   @ValidateNested({ each: true })
@@ -28,6 +44,22 @@ export class LineItemDto {
   @ApiProperty()
   @IsString()
   currencyCode: string;
+
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  sku: string;
+
+  @ApiProperty()
+  @IsNumber()
+  vatBaseAmount: number;
+
+  @ApiProperty()
+  @IsString()
+  barcode: string;
 
   @ApiProperty()
   @IsNumber()
