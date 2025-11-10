@@ -72,7 +72,7 @@ export class TrendyolSmartbillInvoiceAdapter {
         isDiscount: true,
         numberOfItems: product.quantity,
         discountType: 1,  // Discount that Trendyol applies is of "value" type, not of "percentage" type.
-        discountValue: -product.discount,
+        discountValue: -product.discount * product.quantity,  // Even though we enter the numberOfItems, the discount value doesn't get multiplied by that. For that reason, we have to multiply it ourselves.
         isTaxIncluded: true,
         measuringUnitName: "buc",
         currency: product.currencyCode,
