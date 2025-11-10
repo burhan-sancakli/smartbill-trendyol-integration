@@ -3,6 +3,15 @@ import { TrendyolOrderDto } from "../dto/trendyol-order.dto";
 import { DateTime } from "luxon";
 import { RequestSmartbillProductDto } from "src/smartbill/dto/request-smartbill-product.dto";
 
+const SECTOR_DICT = {
+  "01": "Sector 1",
+  "02": "Sector 2",
+  "03": "Sector 3",
+  "04": "Sector 4",
+  "05": "Sector 5",
+  "06": "Sector 6",
+}
+
 export class TrendyolSmartbillInvoiceAdapter {
   static toInternal(requestDto: TrendyolOrderDto): RequestSmartbillInvoiceDto {
     if (requestDto.invoiceAddress.countryCode !== "RO") {
@@ -27,7 +36,18 @@ export class TrendyolSmartbillInvoiceAdapter {
     if(deliveryDate > dueDate){
       deliveryDate = dueDate;  // I don't think we can give a delivery date later than the due date, APIs don't mention anything about this specifically, but their example JSON values suggest this is the case.
     }
-
+    const postalCode = requestDto.invoiceAddress.postalCode;
+    const postalCodePrefix = postalCode.substring(0,2);
+    const sector = SECTOR_DICT[postalCodePrefix];
+    var address = `${requestDto.invoiceAddress.fullAddress}, ${requestDto.invoiceAddress.countyName}`;
+    if(!address.toLocaleLowerCase().includes(requestDto.invoiceAddress.countyName.toLocaleLowerCase())){
+      address = `${address}, ${requestDto.invoiceAddress.countyName}`;
+    }
+    if (
+      sector !== undefined && !address.toLocaleLowerCase().includes(sector.toLocaleLowerCase())
+    ){
+      address = `${address}, ${sector}`;
+    }
     const products: RequestSmartbillProductDto[]  = requestDto.lines.map((product) => ({
       name: product.productName,
       code: product.barcode,
@@ -66,7 +86,7 @@ export class TrendyolSmartbillInvoiceAdapter {
           client: {
             name: requestDto.invoiceAddress.fullName,
             vatCode: requestDto.identityNumber,
-            address: `${requestDto.invoiceAddress.fullAddress}, ${requestDto.invoiceAddress.countyName}`,
+            address: address,
             isTaxPayer: requestDto.taxNumber ? true : false,
             city: requestDto.invoiceAddress.city,
             county: requestDto.invoiceAddress.countyName,

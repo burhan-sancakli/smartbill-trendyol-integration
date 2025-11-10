@@ -10,6 +10,8 @@ import { SmartbillInvoiceAdapter } from './adapters/smartbill-invoice.adapter';
 export class SmartbillService {
   private readonly config: ConfigService;
   private readonly client: AxiosInstance;
+  private lastRequestTime = 0;
+  private readonly delayMs = 340; // 0.34 Sekunden zwischen Requests
   constructor(config: ConfigService) {
     this.config = config; 
     this.client = axios.create({
@@ -21,6 +23,20 @@ export class SmartbillService {
           Buffer.from(`${this.config.get<string>('SMARTBILL_EMAIL')}:${this.config.get<string>('SMARTBILL_TOKEN')}`).toString('base64'),
       },
       timeout: 5000,
+    });
+     // 🕒 Interceptor für den festen Delay zwischen Requests
+    this.client.interceptors.request.use(async (config) => {
+      const now = Date.now();
+      const elapsed = now - this.lastRequestTime;
+
+      if (elapsed < this.delayMs) {
+        const wait = this.delayMs - elapsed;
+        console.log(`Warte ${wait} ms, um Rate Limit einzuhalten...`);
+        await new Promise((resolve) => setTimeout(resolve, wait));
+      }
+
+      this.lastRequestTime = Date.now();
+      return config;
     });
   }
 
