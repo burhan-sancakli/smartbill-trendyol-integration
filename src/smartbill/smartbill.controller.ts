@@ -14,7 +14,7 @@ export class SmartbillController {
   }
 
   @Get('invoice/:number')
-  async getInvoice(@Param('number') number: string, @Res() res: express.Response) {
+  async getInvoice(@Param('number') number: number, @Res() res: express.Response) {
     const pdfBuffer = await this.smartbillService.getInvoice(number);
 
     res.setHeader('Content-Type', 'application/pdf');

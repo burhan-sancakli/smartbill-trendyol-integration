@@ -6,6 +6,7 @@ import { TaxDto } from './dto/smartbill-tax.dto';
 import { SmartbillTaxesResponseDto } from './dto/smartbill-tax-response.dto';
 import { RequestSmartbillInvoiceDto } from './dto/request-smartbill-invoice.dto';
 import { SmartbillInvoiceAdapter } from './adapters/smartbill-invoice.adapter';
+import { pdfToText } from 'pdf-ts';
 @Injectable()
 export class SmartbillService {
   private readonly config: ConfigService;
@@ -13,18 +14,21 @@ export class SmartbillService {
   private lastRequestTime = 0;
   private readonly delayMs = 340; // 0.34 Sekunden zwischen Requests
   constructor(config: ConfigService) {
-    this.config = config; 
+    this.config = config;
+    const email = this.config.get<string>('SMARTBILL_EMAIL');
+    const token = this.config.get<string>('SMARTBILL_TOKEN');
+
     this.client = axios.create({
       baseURL: this.config.get<string>('SMARTBILL_BASE_URL'),
       headers: {
         'Content-Type': 'application/json',
         Authorization:
           'Basic ' +
-          Buffer.from(`${this.config.get<string>('SMARTBILL_EMAIL')}:${this.config.get<string>('SMARTBILL_TOKEN')}`).toString('base64'),
+          Buffer.from(`${email}:${token}`).toString('base64'),
       },
       timeout: 5000,
     });
-     // 🕒 Interceptor für den festen Delay zwischen Requests
+    // 🕒 Interceptor für den festen Delay zwischen Requests
     this.client.interceptors.request.use(async (config) => {
       const now = Date.now();
       const elapsed = now - this.lastRequestTime;
@@ -49,13 +53,28 @@ export class SmartbillService {
     return data;
   }
 
-  async getInvoice(number: string): Promise<Buffer>  {
+  async getAvizNumberFromInvoice(bufferText: Buffer){
+    const text = await pdfToText(bufferText);
+    const match = text.match(/Nr\s*aviz:\s*(\S+)/);
+    if (match) {
+      const nrAviz = match[1];
+      return nrAviz;
+    } else {
+      console.log("Keine 'Nr aviz'-Nummer gefunden.");
+    }
+  }
+
+  async getInvoice(number: number): Promise<Buffer>  {
     const cif = this.config.get<string>('SMARTBILL_VAT_CODE') || "";
     const seriesName = this.config.get<string>('SMARTBILL_SERIES_NAME') || "";
-    const url = `/invoice/pdf?cif=${cif}&seriesname=${seriesName}&number=${number}`;
+    const paddedNumber = String(number).padStart(4, '0');
+    const url = `/invoice/pdf?cif=${cif}&seriesname=${seriesName}&number=${paddedNumber}`;
     const response = await this.client.get(url, {
       responseType: 'arraybuffer', // 👈 wichtig: für PDF-Download
     });
+    const bufferText = Buffer.from(response.data);
+    const avizNumber = await this.getAvizNumberFromInvoice(bufferText);
+    console.log(avizNumber);
     return Buffer.from(response.data);
   }
 
