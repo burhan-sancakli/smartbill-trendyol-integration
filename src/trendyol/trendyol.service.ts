@@ -49,7 +49,7 @@ export class TrendyolService {
     const url = `/order/sellers/${clientId}/orders?size=200&page=0&startDate=${startDate}&endDate=${endDate}`;
     const response = await this.client.get(url, this.getHttpConfig(apiKey, apiSecret));
     const responseJson: TrendyolOrderResponseDto = response.data;
-    const excludedOrderNumbers = ["10659296402","10659256077"]
+    const excludedOrderNumbers: string[] = []
     const data = responseJson.content.filter((item)=>!excludedOrderNumbers.includes(item.orderNumber));
     return data;
   }
