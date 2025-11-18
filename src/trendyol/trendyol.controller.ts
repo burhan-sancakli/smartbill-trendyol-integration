@@ -6,6 +6,11 @@ import { TrendyolOrderDto } from './dto/trendyol-order.dto';
 export class TrendyolController {
   constructor(private readonly trendyolService: TrendyolService) {}
 
+  @Get('submit-generated-order-to-trendyol/:smartbillOrderNumber')
+  submitGeneratedOrderToTrendyol(@Param('smartbillOrderNumber') id: number) {
+    return this.trendyolService.submitGeneratedOrderToTrendyol(id);
+  }
+
   @Get('order/smartbill')
   getOrdersForSmartbill() {
     return this.trendyolService.getOrdersForSmartbill();
@@ -23,7 +28,7 @@ export class TrendyolController {
 
   @Post('order/:id/smartbill')
   generateOrderForSmartbill(@Param('id') id: string) {
-    return this.trendyolService.generateOrderForSmartbill(id);
+    return this.trendyolService.generateOrderForSmartbill(id, true);
   }
 
   @Get('order/:id')

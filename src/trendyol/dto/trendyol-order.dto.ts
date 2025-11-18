@@ -17,6 +17,10 @@ export class TrendyolOrderDto {
 
   @ApiProperty()
   @IsString()
+  id: number;
+
+  @ApiProperty()
+  @IsString()
   orderNumber: string;
 
   @ApiProperty()

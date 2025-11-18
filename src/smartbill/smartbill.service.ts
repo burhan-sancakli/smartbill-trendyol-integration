@@ -73,12 +73,10 @@ export class SmartbillService {
       responseType: 'arraybuffer', // 👈 wichtig: für PDF-Download
     });
     const bufferText = Buffer.from(response.data);
-    const avizNumber = await this.getAvizNumberFromInvoice(bufferText);
-    console.log(avizNumber);
-    return Buffer.from(response.data);
+    return bufferText;
   }
 
-  async createInvoice(requestDto: RequestSmartbillInvoiceDto): Promise<any>  {
+  async createInvoice(requestDto: RequestSmartbillInvoiceDto): Promise<Buffer>  {
     const cif = this.config.get<string>('SMARTBILL_VAT_CODE') || ""
     const issuerName = this.config.get<string>('SMARTBILL_COMPANY_NAME') || "";
     const seriesName = this.config.get<string>('SMARTBILL_SERIES_NAME') || "";
@@ -88,7 +86,7 @@ export class SmartbillService {
     });
    
     const response = await this.client.post(url,smartbillInvoiceDto);
-    return response.data;
+    return Buffer.from(response.data);
   }
 
   findAll() {
