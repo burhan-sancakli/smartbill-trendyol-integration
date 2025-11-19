@@ -86,7 +86,8 @@ export class SmartbillService {
     });
    
     const response = await this.client.post(url,smartbillInvoiceDto);
-    return Buffer.from(response.data);
+    const smartbillInvoice = await this.getInvoice(parseInt(response.data.number));
+    return smartbillInvoice;
   }
 
   findAll() {
