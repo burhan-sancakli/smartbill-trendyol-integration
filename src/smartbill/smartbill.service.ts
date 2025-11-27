@@ -59,15 +59,23 @@ export class SmartbillService {
     return data;
   }
 
+  async getSeriesNameNumberFromInvoice(bufferText: Buffer){
+    const text = await pdfToText(bufferText);
+    const match = text.split("\n")[0];
+    if (!match) {
+      throw "Keine 'SeriesName' Oder 'Nummer' gefunden.";
+    }
+    return match;
+  }
+
   async getAvizNumberFromInvoice(bufferText: Buffer){
     const text = await pdfToText(bufferText);
     const match = text.match(/Nr\s*aviz:\s*(\S+)/);
-    if (match) {
-      const nrAviz = match[1];
-      return nrAviz;
-    } else {
-      console.log("Keine 'Nr aviz'-Nummer gefunden.");
+    if (!match) {
+      throw "Keine 'Nr aviz'-Nummer gefunden.";
     }
+    const nrAviz = match[1];
+    return nrAviz;
   }
 
   getLocalInvoiceFile(seriesName: string | null = null, number: number | null = null, storeId: number | null = null, orderNumber: string | null = null): Buffer | null {
