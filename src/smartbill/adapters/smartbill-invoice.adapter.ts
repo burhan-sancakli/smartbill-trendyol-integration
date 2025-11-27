@@ -2,11 +2,10 @@ import { SmartbillInvoiceDto } from "../dto/smartbill-invoice.dto";
 import { RequestSmartbillInvoiceDto } from "../dto/request-smartbill-invoice.dto";
 
 export class SmartbillInvoiceAdapter {
-  static toInternal(requestDto: RequestSmartbillInvoiceDto, options: { companyVatCode: string; issuerName: string; seriesName: string; isDraft?: boolean }): SmartbillInvoiceDto {
+  static toInternal(requestDto: RequestSmartbillInvoiceDto, options: { companyVatCode: string; issuerName: string; isDraft?: boolean }): SmartbillInvoiceDto {
     return {
       ...requestDto,
       companyVatCode: options.companyVatCode,
-      seriesName: options.seriesName,
       isDraft: options.isDraft ?? false,
       client: {
         ...requestDto.client,

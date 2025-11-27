@@ -10,6 +10,9 @@ export class RequestSmartbillInvoiceDto {
   @Type(() => RequestSmartbillClientDto)
   client: RequestSmartbillClientDto;
 
+  @IsString()
+  seriesName: string;
+
   @IsDateString()
   issueDate: string;
 

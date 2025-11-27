@@ -14,6 +14,7 @@ export class TrendyolService {
   private readonly config: ConfigService;
   private readonly client: AxiosInstance;
   private readonly smartbill: SmartbillService;
+  private readonly storeIds: number[];
   constructor(config: ConfigService, smartbill: SmartbillService) {
     this.config = config; 
     this.client = axios.create({
@@ -21,22 +22,23 @@ export class TrendyolService {
       timeout: 5000,
     });
     this.smartbill = smartbill;
+    this.storeIds = this.config.get<string>('TRENDYOL_STORE_IDS')?.split(',').map(item=>parseInt(item)) || [];
   }
 
 
-  private getHttpConfig(apiKey: string, apiSecret: string){
+  private getHttpConfig(storeId: number){
+    const apiStoreFrontCode = this.config.get<number>(`TRENDYOL_${storeId}_API_STORE_FRONT_CODE`);
+    const apiKey = this.config.get<string>(`TRENDYOL_${storeId}_API_KEY`) || "";
+    const apiSecret = this.config.get<string>(`TRENDYOL_${storeId}_API_SECRET`) || "";
     return { 
       headers: {
         Authorization: 'Basic ' + Buffer.from(`${apiKey}:${apiSecret}`).toString('base64'),
-        StoreFrontCode: this.config.get<number>('TRENDYOL_API_STORE_FRONT_CODE')
+        StoreFrontCode: apiStoreFrontCode || ''
       }
     };
   }
 
   async getOrders(): Promise<TrendyolOrderDto[]> {
-    const clientId = this.config.get<number>('TRENDYOL_API_ID') || 0;
-    const apiKey = this.config.get<string>('TRENDYOL_API_KEY') || "";
-    const apiSecret = this.config.get<string>('TRENDYOL_API_SECRET') || "";
     // Aktuelle Zeit in Europa/Bucharest
     const now = DateTime.now().setZone('Europe/Bucharest');
     // Fünf Tage früher, Mitternacht (erste Minute des Tages)
@@ -44,42 +46,55 @@ export class TrendyolService {
 
     const endDate = now.toMillis();         // aktuelle Zeit in ms
     const startDate = fiveDaysAgo.toMillis(); // 00:00 vor 5 Tagen
-    const url = `/order/sellers/${clientId}/orders?size=200&page=0&startDate=${startDate}&endDate=${endDate}`;
-    const response = await this.client.get(url, this.getHttpConfig(apiKey, apiSecret));
-    const responseJson: TrendyolOrderResponseDto = response.data;
-    const excludedOrderNumbers: string[] = []
-    const data = responseJson.content.filter((item)=>!excludedOrderNumbers.includes(item.orderNumber));
-    return data;
+    const ordersDict: {[orderNumber: string]: TrendyolOrderDto} = {};
+    /*for (const storeId of this.storeIds) {
+      while (true) {
+        const url = `/order/sellers/${storeId}/orders?size=200&page=0&startDate=${startDate}&endDate=${endDate}`;
+        const response = await this.client.get(url, this.getHttpConfig(storeId));
+        const responseJson: TrendyolOrderResponseDto = response.data;
+        const data = responseJson.content;
+        ordersDict.push(...data);
+      }
+      console.log(`Found ${orders.length} orders for storeId ${storeId} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
+    }*/
+    const orders = Object.values(ordersDict);
+    return orders;
   }
 
-  async getOrder(id: string): Promise<TrendyolOrderDto | undefined> {
-    const clientId = this.config.get<number>('TRENDYOL_API_ID') || 0;
-    const apiKey = this.config.get<string>('TRENDYOL_API_KEY') || "";
-    const apiSecret = this.config.get<string>('TRENDYOL_API_SECRET') || "";
-    const url = `/order/sellers/${clientId}/orders?orderNumber=${id}`;
-    const response = await this.client.get(url, this.getHttpConfig(apiKey, apiSecret));
-    const responseJson: TrendyolOrderResponseDto = response.data;
+  async getOrder(storeId: number, orderNumber: string): Promise<TrendyolOrderDto | undefined> {
+    const url = `/order/sellers/${storeId}/orders?orderNumber=${orderNumber}`;
+    const response = await this.client.get(url, this.getHttpConfig(storeId));
+    const responseJson: TrendyolOrderResponseDto = {...response.data, storeId};
     const data = responseJson.content.at(0)
     return data;
   }
 
-  _getOrderForSmartbill(trendyolOrder: TrendyolOrderDto){
-    const smartbillOrder = TrendyolSmartbillInvoiceAdapter.toInternal(trendyolOrder);
+  _getOrderForSmartbill(trendyolOrder: TrendyolOrderDto, seriesName: string){
+    const smartbillOrder = TrendyolSmartbillInvoiceAdapter.toInternal(trendyolOrder, seriesName);
     return smartbillOrder;
   }
 
   async getOrdersForSmartbill(): Promise<RequestSmartbillInvoiceDto[]> {
     const trendyolOrders = await this.getOrders();
-    const smartbillOrders = trendyolOrders.map((trendyolOrder)=> this._getOrderForSmartbill(trendyolOrder));
+    const seriesNamesDict = Object.fromEntries(
+      trendyolOrders.map((trendyolOrder)=> [
+        trendyolOrder.storeId, this.config.get<string>(`TRENDYOL_${trendyolOrder.storeId}_SMARTBILL_SERIES_NAME`) as string
+      ]
+    ));
+    const smartbillOrders = trendyolOrders.map((trendyolOrder)=> this._getOrderForSmartbill(trendyolOrder, seriesNamesDict[trendyolOrder.storeId]));
     return smartbillOrders;
   }
 
-  async getOrderForSmartbill(id: string): Promise<RequestSmartbillInvoiceDto | undefined> {
-    const trendyolOrder = await this.getOrder(id);
+  async getOrderForSmartbill(storeId: number, orderNumber: string): Promise<RequestSmartbillInvoiceDto | undefined> {
+    const trendyolOrder = await this.getOrder(storeId, orderNumber);
     if(!trendyolOrder){
       return undefined;
     }
-    const smartbillOrder = this._getOrderForSmartbill(trendyolOrder);
+    const seriesName = this.config.get<string>(`TRENDYOL_${storeId}_SMARTBILL_SERIES_NAME`);
+    if(!seriesName){
+      throw `Series name not found for Trendyol API ID: ${storeId}`;
+    }
+    const smartbillOrder = this._getOrderForSmartbill(trendyolOrder, seriesName);
     return smartbillOrder;
   }
 
@@ -92,33 +107,34 @@ export class TrendyolService {
     return smartbillOrders;
   }
 
-  async generateOrderForSmartbill(id: string, submitToTrendyol: boolean = false): Promise<RequestSmartbillInvoiceDto> {
-    const trendyolOrder = await this.getOrder(id);
+  async generateOrderForSmartbill(storeId, orderNumber: string, submitToTrendyol: boolean = false): Promise<RequestSmartbillInvoiceDto> {
+    const trendyolOrder = await this.getOrder(storeId, orderNumber);
     if(!trendyolOrder){
-      throw `Trendyol order not found for orderNumber: ${id}`;
+      throw `Trendyol order not found for orderNumber: ${orderNumber}`;
     }
-    const smartbillOrderFormat = this._getOrderForSmartbill(trendyolOrder);
+    const seriesName = this.config.get<string>(`TRENDYOL_${storeId}_SMARTBILL_SERIES_NAME`);
+    if(!seriesName){
+      throw `Series name not found for Trendyol API ID: ${storeId}`;
+    }
+    const smartbillOrderFormat = this._getOrderForSmartbill(trendyolOrder, seriesName);
     if(!smartbillOrderFormat){
-      throw `smartbillOrderFormat couldn't be created for orderNumber: ${id}`;
+      throw `smartbillOrderFormat couldn't be created for orderNumber: ${orderNumber}`;
     }
     const smartbillOrder = await this.smartbill.createInvoice(smartbillOrderFormat);
     if(!smartbillOrder){
-      throw `smartbillOrder couldn't be created for orderNumber: ${id}`;
+      throw `smartbillOrder couldn't be created for orderNumber: ${orderNumber}`;
     }
     if(submitToTrendyol){
-      const result = await this._submitGeneratedOrderToTrendyol(trendyolOrder.id, smartbillOrder)
+      const result = await this._submitGeneratedOrderToTrendyol(storeId, trendyolOrder.id, smartbillOrder)
       if(!result){
-        throw `smartbillOrder for orderNumber ${id} has been created, but that couldn't be submitted to Trendyol. From now on, manual submission of this invoice to the Trendyol is required!`;
+        throw `smartbillOrder for orderNumber ${orderNumber} has been created, but that couldn't be submitted to Trendyol. From now on, manual submission of this invoice to the Trendyol is required!`;
       }
     }
     return smartbillOrderFormat;
   }
   
-  async _submitGeneratedOrderToTrendyol(orderId: number, bufferText: Buffer<ArrayBufferLike>){
-    const clientId = this.config.get<number>('TRENDYOL_API_ID') || 0;
-    const apiKey = this.config.get<string>('TRENDYOL_API_KEY') || "";
-    const apiSecret = this.config.get<string>('TRENDYOL_API_SECRET') || "";
-    const url = `/sellers/${clientId}/seller-invoice-file`;
+  async _submitGeneratedOrderToTrendyol(storeId: number, orderId: number, bufferText: Buffer<ArrayBufferLike>){
+    const url = `/sellers/${storeId}/seller-invoice-file`;
     // Multipart Body
     const form = new FormData();
     form.append('shipmentPackageId', orderId.toString());
@@ -127,7 +143,7 @@ export class TrendyolService {
       contentType: 'application/pdf'
     });
 
-    const response = await this.client.post(url, form, this.getHttpConfig(apiKey, apiSecret));
+    const response = await this.client.post(url, form, this.getHttpConfig(storeId));
     const success = response.status === 201;
     if(!success){
       console.log(`_submitGeneratedOrderToTrendyol(${orderId}, ...); Response status is not 201, it is ${response.status}. Response body is: ${response.data}`);
@@ -135,13 +151,17 @@ export class TrendyolService {
     return success;
   }
 
-  async submitGeneratedOrderToTrendyol(smartbillOrderNumber: number){
-    const smartbillOrder = await this.smartbill.getInvoice(smartbillOrderNumber);
+  async submitGeneratedOrderToTrendyol(storeId: number, smartbillOrderNumber: number){
+    const seriesName = this.config.get<string>(`TRENDYOL_${storeId}_SMARTBILL_SERIES_NAME`);
+    if(!seriesName){
+      throw `Series name not found for Trendyol API ID: ${storeId}`;
+    }
+    const smartbillOrder = await this.smartbill.getInvoice(seriesName, smartbillOrderNumber);
     const avizNumber = await this.smartbill.getAvizNumberFromInvoice(smartbillOrder);
     if(!avizNumber){
       throw `aviz number not found for invoice with the index: ${smartbillOrderNumber}`;
     }
-    const trendyolOrder = await this.getOrder(avizNumber);
+    const trendyolOrder = await this.getOrder(storeId, avizNumber);
     if (!trendyolOrder){
       throw `Trendyol order not found for aviz number: ${avizNumber}`;
     }
@@ -150,13 +170,21 @@ export class TrendyolService {
     }
     const orderId = trendyolOrder.id;
     // Multipart Body
-    const response = await this._submitGeneratedOrderToTrendyol(orderId, smartbillOrder);
+    const response = await this._submitGeneratedOrderToTrendyol(storeId, orderId, smartbillOrder);
     return response;
   }
   
   async submitGeneratedOrdersToTrendyol(){
-    for(var i=1; i<102; i++){
-      await this.submitGeneratedOrderToTrendyol(i);
+    
+    for (const storeId of this.storeIds) {
+      const seriesName = this.config.get<string>(`TRENDYOL_${storeId}_SMARTBILL_SERIES_NAME`);
+      if(!seriesName){
+        console.log(`Series name not found for Trendyol API ID: ${storeId}, skipping...`);
+        continue;
+      }
+      for(var i=1; i<102; i++){
+        await this.submitGeneratedOrderToTrendyol(storeId, i);
+      }
     }
   }
 }

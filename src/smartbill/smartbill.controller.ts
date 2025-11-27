@@ -14,11 +14,11 @@ export class SmartbillController {
   }
 
   @Get('invoice/:number')
-  async getInvoice(@Param('number') number: number, @Res() res: express.Response) {
-    const pdfBuffer = await this.smartbillService.getInvoice(number);
+  async getInvoice(@Param('string') seriesName: string, @Param('number') number: number, @Res() res: express.Response) {
+    const pdfBuffer = await this.smartbillService.getInvoice(seriesName, number);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="invoice-${number}.pdf"`);
+    res.setHeader('Content-Disposition', `inline; filename="invoice-${seriesName}${number}.pdf"`);
     res.send(pdfBuffer);
   }
 

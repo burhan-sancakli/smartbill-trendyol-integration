@@ -15,9 +15,6 @@ export class SmartbillInvoiceDto extends RequestSmartbillInvoiceDto {
   @IsBoolean()
   isDraft: boolean;
 
-  @IsString()
-  seriesName: string;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SmartbillProductDto)

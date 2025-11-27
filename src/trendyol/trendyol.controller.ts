@@ -6,9 +6,11 @@ import { TrendyolOrderDto } from './dto/trendyol-order.dto';
 export class TrendyolController {
   constructor(private readonly trendyolService: TrendyolService) {}
 
-  @Get('submit-generated-order-to-trendyol/:smartbillOrderNumber')
-  submitGeneratedOrderToTrendyol(@Param('smartbillOrderNumber') id: number) {
-    return this.trendyolService.submitGeneratedOrderToTrendyol(id);
+  @Get('store-id/:storeId/submit-generated-order-to-trendyol/:smartbillOrderNumber')
+  submitGeneratedOrderToTrendyol(
+    @Param('storeId') storeId: number, 
+    @Param('smartbillOrderNumber') smartbillOrderNumber: number) {
+    return this.trendyolService.submitGeneratedOrderToTrendyol(storeId,smartbillOrderNumber);
   }
 
   @Get('order/smartbill')
@@ -21,19 +23,25 @@ export class TrendyolController {
     return this.trendyolService.generateOrdersForSmartbill();
   }
 
-  @Get('order/:id/smartbill')
-  getOrderForSmartbill(@Param('id') id: string) {
-    return this.trendyolService.getOrderForSmartbill(id);
+  @Get('store-id/:storeId/order-number/:orderNumber/smartbill')
+  getOrderForSmartbill(
+    @Param('storeId') storeId: number,
+    @Param('orderNumber') orderNumber: string) {
+    return this.trendyolService.getOrderForSmartbill(storeId, orderNumber);
   }
 
-  @Post('order/:id/smartbill')
-  generateOrderForSmartbill(@Param('id') id: string) {
-    return this.trendyolService.generateOrderForSmartbill(id, true);
+  @Post('store-id/:storeId/order-number/:orderNumber/smartbill')
+  generateOrderForSmartbill(
+    @Param('storeId') storeId: number,
+    @Param('orderNumber') orderNumber: string) {
+    return this.trendyolService.generateOrderForSmartbill(storeId, orderNumber, true);
   }
 
-  @Get('order/:id')
-  getOrder(@Param('id') id: string) {
-    return this.trendyolService.getOrder(id);
+  @Get('store-id/:storeId/order-number/:orderNumber')
+  getOrder(
+    @Param('storeId') storeId: number, 
+    @Param('orderNumber') orderNumber: string) {
+    return this.trendyolService.getOrder(storeId, orderNumber);
   }
 
   @Get('order')

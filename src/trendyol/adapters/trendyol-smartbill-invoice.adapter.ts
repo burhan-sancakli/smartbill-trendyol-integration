@@ -13,7 +13,7 @@ const SECTOR_DICT = {
 }
 
 export class TrendyolSmartbillInvoiceAdapter {
-  static toInternal(requestDto: TrendyolOrderDto): RequestSmartbillInvoiceDto {
+  static toInternal(requestDto: TrendyolOrderDto, seriesName: string): RequestSmartbillInvoiceDto {
     if (requestDto.invoiceAddress.countryCode !== "RO") {
       throw new Error(`Nur rumänische Rechnungen sind erlaubt. Der gegebene countryCode war: ${requestDto.invoiceAddress.countryCode}`);
     }
@@ -100,7 +100,7 @@ export class TrendyolSmartbillInvoiceAdapter {
          currency: "RON",
          language: "RO",
          precision: 2,
-       
+         seriesName: seriesName,
          aviz: requestDto.orderNumber,
        
          observations: `Internal info. TrendyolOrderNumber=${requestDto.orderNumber},TrendyolTrackingCode=${requestDto.cargoTrackingNumber}`,

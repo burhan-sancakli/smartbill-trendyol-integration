@@ -117,6 +117,10 @@ export class TrendyolOrderDto {
   @ApiProperty()
   @IsBoolean()
   containsDangerousProduct: boolean;
+
+  @ApiProperty()
+  @IsNumber()
+  storeId: number;
 }
 
 function Type1(arg0: () => any): (target: TrendyolOrderDto, propertyKey: "shipmentAddress") => void {

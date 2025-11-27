@@ -64,9 +64,8 @@ export class SmartbillService {
     }
   }
 
-  async getInvoice(number: number): Promise<Buffer>  {
+  async getInvoice(seriesName: string, number: number): Promise<Buffer>  {
     const cif = this.config.get<string>('SMARTBILL_VAT_CODE') || "";
-    const seriesName = this.config.get<string>('SMARTBILL_SERIES_NAME') || "";
     const paddedNumber = String(number).padStart(4, '0');
     const url = `/invoice/pdf?cif=${cif}&seriesname=${seriesName}&number=${paddedNumber}`;
     const response = await this.client.get(url, {
@@ -79,14 +78,13 @@ export class SmartbillService {
   async createInvoice(requestDto: RequestSmartbillInvoiceDto): Promise<Buffer>  {
     const cif = this.config.get<string>('SMARTBILL_VAT_CODE') || ""
     const issuerName = this.config.get<string>('SMARTBILL_COMPANY_NAME') || "";
-    const seriesName = this.config.get<string>('SMARTBILL_SERIES_NAME') || "";
     const url = `/invoice`;
     const smartbillInvoiceDto = SmartbillInvoiceAdapter.toInternal(requestDto, {
-      companyVatCode: cif, issuerName: issuerName, seriesName: seriesName
+      companyVatCode: cif, issuerName: issuerName
     });
    
     const response = await this.client.post(url,smartbillInvoiceDto);
-    const smartbillInvoice = await this.getInvoice(parseInt(response.data.number));
+    const smartbillInvoice = await this.getInvoice(smartbillInvoiceDto.seriesName, parseInt(response.data.number));
     return smartbillInvoice;
   }
 
