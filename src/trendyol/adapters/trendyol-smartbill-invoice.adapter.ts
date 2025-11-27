@@ -52,7 +52,7 @@ export class TrendyolSmartbillInvoiceAdapter {
       name: product.productName,
       code: product.barcode,
       quantity: product.quantity,
-      price: product.amount,  // Should i place here the price with discount included or not?
+      price: product.amount,
       isDiscount: false,
       isTaxIncluded: true,
       measuringUnitName: "buc",

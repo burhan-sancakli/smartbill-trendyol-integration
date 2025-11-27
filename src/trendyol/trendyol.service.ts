@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { TrendyolOrderDto } from './dto/trendyol-order.dto';
 import axios, { AxiosInstance } from 'axios';
 import { ConfigService } from '@nestjs/config';
@@ -11,20 +11,30 @@ import FormData from 'form-data';
 
 @Injectable()
 export class TrendyolService {
-  private readonly config: ConfigService;
   private readonly client: AxiosInstance;
-  private readonly smartbill: SmartbillService;
   private readonly storeIds: number[];
-  constructor(config: ConfigService, smartbill: SmartbillService) {
+  constructor(private readonly config: ConfigService, @Inject(forwardRef(() => SmartbillService)) private readonly smartbill: SmartbillService) {
     this.config = config; 
     this.client = axios.create({
       baseURL: this.config.get<string>('TRENDYOL_BASE_URL'),
       timeout: 5000,
     });
-    this.smartbill = smartbill;
-    this.storeIds = this.config.get<string>('TRENDYOL_STORE_IDS')?.split(',').map(item=>parseInt(item)) || [];
+    this.storeIds = this.getStoreIds();
   }
 
+  public getStoreIds() {
+    const storeIds = this.config.get<string>('TRENDYOL_STORE_IDS')?.split(',').map(item=>parseInt(item)) || [];
+    return storeIds;
+  }
+
+  public getStoreIdFromSeriesName(seriesName: string): number {
+    const storeIds = this.getStoreIds();
+    const storeId = storeIds.find(id => this.config.get<string>(`TRENDYOL_${id}_SMARTBILL_SERIES_NAME`) == seriesName);
+    if(!storeId){
+      throw `Store ID not found for series name: ${seriesName}`;
+    }
+    return storeId;
+  }
 
   private getHttpConfig(storeId: number){
     const apiStoreFrontCode = this.config.get<number>(`TRENDYOL_${storeId}_API_STORE_FRONT_CODE`);
