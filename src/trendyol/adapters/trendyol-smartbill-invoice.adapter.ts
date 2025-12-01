@@ -85,7 +85,7 @@ export class TrendyolSmartbillInvoiceAdapter {
     return {
           client: {
             name: requestDto.invoiceAddress.fullName,
-            vatCode: requestDto.identityNumber,
+            vatCode: "0000000000000", // requestDto.identityNumber,  // Trendyol hasn't been able to provide a valid identityNumber (VAT number) for more than a month, so we had to give up on that.
             address: address,
             isTaxPayer: requestDto.taxNumber ? true : false,
             city: requestDto.invoiceAddress.city,
