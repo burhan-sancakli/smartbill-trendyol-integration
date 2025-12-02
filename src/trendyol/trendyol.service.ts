@@ -52,14 +52,14 @@ export class TrendyolService {
     // Aktuelle Zeit in Europa/Bucharest
     const now = DateTime.now().setZone('Europe/Bucharest');
     // Fünf Tage früher, Mitternacht (erste Minute des Tages)
-    const fiveDaysAgo = now.minus({ days: 5 }).startOf('day');
+    const fiveDaysAgo = now.minus({ days: 3 }).startOf('day');
 
     const endDate = now.toMillis();         // aktuelle Zeit in ms
     const startDate = fiveDaysAgo.toMillis(); // 00:00 vor 5 Tagen
     const ordersDict: {[storeId_orderNumber: string]: TrendyolOrderDto} = {};
     for (const storeId of this.storeIds) {
       for (let page = 0; page < 999999; page++) {
-        const url = `/order/sellers/${storeId}/orders?size=200&page=${page}&startDate=${startDate}&endDate=${endDate}`;
+        const url = `/order/sellers/${storeId}/orders?size=200&page=${page}&startDate=${startDate}&endDate=${endDate}&orderByField=PackageLastModifiedDate&orderByDirection=ASC`;
         const response = await this.client.get(url, this.getHttpConfig(storeId));
         const responseJson: TrendyolOrderResponseDto = response.data;
         const data = responseJson.content;
@@ -72,8 +72,9 @@ export class TrendyolService {
       }
       
     }
-    console.log(`Found ${ordersDict.length} orders for storeIds ${this.storeIds} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
     const orders = Object.values(ordersDict);
+    console.log(`Found ${orders.length} orders for storeIds ${this.storeIds} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
+    
     return orders;
   }
 
