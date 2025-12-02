@@ -20,7 +20,7 @@ export class TrendyolController {
 
   @Post('order/smartbill')
   generateOrdersForSmartbill() {
-    return this.trendyolService.generateOrdersForSmartbill();
+    return this.trendyolService.generateOrdersForSmartbill(true);
   }
 
   @Get('store-id/:storeId/order-number/:orderNumber/smartbill')

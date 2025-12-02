@@ -56,17 +56,23 @@ export class TrendyolService {
 
     const endDate = now.toMillis();         // aktuelle Zeit in ms
     const startDate = fiveDaysAgo.toMillis(); // 00:00 vor 5 Tagen
-    const ordersDict: {[orderNumber: string]: TrendyolOrderDto} = {};
-    /*for (const storeId of this.storeIds) {
-      while (true) {
-        const url = `/order/sellers/${storeId}/orders?size=200&page=0&startDate=${startDate}&endDate=${endDate}`;
+    const ordersDict: {[storeId_orderNumber: string]: TrendyolOrderDto} = {};
+    for (const storeId of this.storeIds) {
+      for (let page = 0; page < 999999; page++) {
+        const url = `/order/sellers/${storeId}/orders?size=200&page=${page}&startDate=${startDate}&endDate=${endDate}`;
         const response = await this.client.get(url, this.getHttpConfig(storeId));
         const responseJson: TrendyolOrderResponseDto = response.data;
         const data = responseJson.content;
-        ordersDict.push(...data);
+        data.forEach(order => {
+          ordersDict[`${storeId}_${order.orderNumber}`] = {...order, storeId};
+        });
+        if (data.length == 0){
+          break;
+        }
       }
-      console.log(`Found ${orders.length} orders for storeId ${storeId} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
-    }*/
+      
+    }
+    console.log(`Found ${ordersDict.length} orders for storeIds ${this.storeIds} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
     const orders = Object.values(ordersDict);
     return orders;
   }
@@ -108,11 +114,38 @@ export class TrendyolService {
     return smartbillOrder;
   }
 
-  async generateOrdersForSmartbill(): Promise<RequestSmartbillInvoiceDto[]> {
-    const smartbillOrders = await this.getOrdersForSmartbill();
-    for(var key in smartbillOrders){
-      const smartbillOrder = smartbillOrders[key];
-      const result = await this.smartbill.createInvoice(smartbillOrder);
+  async _generateOrderForSmartbill(trendyolOrder:TrendyolOrderDto, submitToTrendyol: boolean = false): Promise<RequestSmartbillInvoiceDto> {
+    const seriesName = this.config.get<string>(`TRENDYOL_${trendyolOrder.storeId}_SMARTBILL_SERIES_NAME`);
+    if(!seriesName){
+      throw `Series name not found for Trendyol API ID: ${trendyolOrder.storeId}`;
+    }
+    const smartbillOrderFormat = this._getOrderForSmartbill(trendyolOrder, seriesName);
+    if(!smartbillOrderFormat){
+      throw `smartbillOrderFormat couldn't be created for orderNumber: ${trendyolOrder.orderNumber}`;
+    }
+    const smartbillOrder = await this.smartbill.createInvoice(smartbillOrderFormat);
+    if(!smartbillOrder){
+      throw `smartbillOrder couldn't be created for orderNumber: ${trendyolOrder.orderNumber}`;
+    }
+    if(submitToTrendyol){
+      const result = await this._submitGeneratedOrderToTrendyol(trendyolOrder.storeId, trendyolOrder.id, smartbillOrder)
+      if(!result){
+        throw `smartbillOrder for orderNumber ${trendyolOrder.orderNumber} has been created, but that couldn't be submitted to Trendyol. From now on, manual submission of this invoice to the Trendyol is required!`;
+      }
+    }
+    return smartbillOrderFormat;
+  }
+
+  async generateOrdersForSmartbill(submitToTrendyol: boolean = false): Promise<RequestSmartbillInvoiceDto[]> {
+    const orders = await this.getOrders();
+    const smartbillOrders: RequestSmartbillInvoiceDto[] = [];
+    for (const trendyolOrder of orders) {
+      try {
+        const smartbillOrderFormat = await this._generateOrderForSmartbill(trendyolOrder, submitToTrendyol);
+        smartbillOrders.push(smartbillOrderFormat);
+      } catch (error) {
+        console.log(`Error generating Smartbill order for Trendyol order ${trendyolOrder.orderNumber}: ${error}`);
+      }
     }
     return smartbillOrders;
   }
@@ -122,24 +155,7 @@ export class TrendyolService {
     if(!trendyolOrder){
       throw `Trendyol order not found for orderNumber: ${orderNumber}`;
     }
-    const seriesName = this.config.get<string>(`TRENDYOL_${storeId}_SMARTBILL_SERIES_NAME`);
-    if(!seriesName){
-      throw `Series name not found for Trendyol API ID: ${storeId}`;
-    }
-    const smartbillOrderFormat = this._getOrderForSmartbill(trendyolOrder, seriesName);
-    if(!smartbillOrderFormat){
-      throw `smartbillOrderFormat couldn't be created for orderNumber: ${orderNumber}`;
-    }
-    const smartbillOrder = await this.smartbill.createInvoice(smartbillOrderFormat);
-    if(!smartbillOrder){
-      throw `smartbillOrder couldn't be created for orderNumber: ${orderNumber}`;
-    }
-    if(submitToTrendyol){
-      const result = await this._submitGeneratedOrderToTrendyol(storeId, trendyolOrder.id, smartbillOrder)
-      if(!result){
-        throw `smartbillOrder for orderNumber ${orderNumber} has been created, but that couldn't be submitted to Trendyol. From now on, manual submission of this invoice to the Trendyol is required!`;
-      }
-    }
+    const smartbillOrderFormat = await this._generateOrderForSmartbill(trendyolOrder, submitToTrendyol);
     return smartbillOrderFormat;
   }
   
@@ -182,19 +198,5 @@ export class TrendyolService {
     // Multipart Body
     const response = await this._submitGeneratedOrderToTrendyol(storeId, orderId, smartbillOrder);
     return response;
-  }
-  
-  async submitGeneratedOrdersToTrendyol(){
-    
-    for (const storeId of this.storeIds) {
-      const seriesName = this.config.get<string>(`TRENDYOL_${storeId}_SMARTBILL_SERIES_NAME`);
-      if(!seriesName){
-        console.log(`Series name not found for Trendyol API ID: ${storeId}, skipping...`);
-        continue;
-      }
-      for(var i=1; i<102; i++){
-        await this.submitGeneratedOrderToTrendyol(storeId, i);
-      }
-    }
   }
 }
