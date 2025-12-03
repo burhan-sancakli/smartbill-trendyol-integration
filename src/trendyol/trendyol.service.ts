@@ -70,11 +70,10 @@ export class TrendyolService {
           break;
         }
       }
-      
     }
     const orders = Object.values(ordersDict);
     console.log(`Found ${orders.length} orders for storeIds ${this.storeIds} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
-    
+    orders.sort((a, b) => a.orderDate - b.orderDate );  // Sortieren nach orderDate aufsteigend
     return orders;
   }
 
