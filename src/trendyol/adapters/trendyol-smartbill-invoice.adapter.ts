@@ -28,8 +28,17 @@ export class TrendyolSmartbillInvoiceAdapter {
         throw new Error(`currencyCode of the product is expected to be RON, it was different, this case hasn't been handled yet: ${product.currencyCode}`);
       }
     })
-    const issueDate = DateTime.fromMillis(requestDto.orderDate)
+    let issueDate = DateTime.fromMillis(requestDto.orderDate)
       .setZone('Europe/Bucharest');
+
+    // Get November 30th of the same year
+    /*const november30th = issueDate.set({ month: 11, day: 30 }); // Month is 1-indexed in Luxon (11 = November)
+
+    // If issueDate is older than November 30th, set it to November 30th
+    if (issueDate < november30th) {
+      issueDate = november30th;
+    }*/
+   
     const dueDate = issueDate.plus({ days: 5 });
     var deliveryDate = DateTime.fromMillis(requestDto.packageHistories.findLast((packageHistory)=>packageHistory.status=="Delivered")?.createdDate || requestDto.estimatedDeliveryEndDate)
       .setZone('Europe/Bucharest');
