@@ -56,7 +56,7 @@ export class TrendyolService {
     for (const storeId of this.storeIds) {
       let now = DateTime.now().setZone('Europe/Bucharest');
       for(let i=1; i < 2; i++){
-            // Fünf Tage früher, Mitternacht (erste Minute des Tages)
+        // Fünf Tage früher, Mitternacht (erste Minute des Tages)
         const fiveDaysAgo = now.minus({ days: 5 }).startOf('day');
 
         const endDate = now.toMillis();         // aktuelle Zeit in ms
