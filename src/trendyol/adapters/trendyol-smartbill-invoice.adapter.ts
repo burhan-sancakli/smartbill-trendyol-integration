@@ -31,13 +31,25 @@ export class TrendyolSmartbillInvoiceAdapter {
     let issueDate = DateTime.fromMillis(requestDto.orderDate)
       .setZone('Europe/Bucharest');
 
-    // Get November 30th of the same year
-    /*const november30th = issueDate.set({ month: 11, day: 30 }); // Month is 1-indexed in Luxon (11 = November)
+    const day = issueDate.day;
 
-    // If issueDate is older than November 30th, set it to November 30th
-    if (issueDate < november30th) {
-      issueDate = november30th;
-    }*/
+    if (day === 1) {
+      // 1st → 2nd of same month
+      issueDate = issueDate.set({ day: 2 });
+    } 
+    else if (day === 30 || day === 31) {
+      // 30th or 31st → 2nd of next month
+      issueDate = issueDate
+        .plus({ months: 1 })
+        .set({ day: 2 });
+    }
+
+    const now = DateTime.now().setZone('Europe/Bucharest');
+
+    // Stop if issueDate is in the future
+    if (issueDate > now) {
+      throw new Error(`Issue date cannot be in future.`);
+    }
    
     const dueDate = issueDate.plus({ days: 5 });
     var deliveryDate = DateTime.fromMillis(requestDto.packageHistories.findLast((packageHistory)=>packageHistory.status=="Delivered")?.createdDate || requestDto.estimatedDeliveryEndDate)
