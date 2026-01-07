@@ -50,30 +50,36 @@ export class TrendyolService {
 
   async getOrders(): Promise<TrendyolOrderDto[]> {
     // Aktuelle Zeit in Europa/Bucharest
-    const now = DateTime.now().setZone('Europe/Bucharest');
-    // Fünf Tage früher, Mitternacht (erste Minute des Tages)
+    
     
     const ordersDict: {[storeId_orderNumber: string]: TrendyolOrderDto} = {};
     for (const storeId of this.storeIds) {
-      const days = 3;
-      const daysAgo = now.minus({ days: days }).startOf('day');
-      const endDate = now.toMillis();         // aktuelle Zeit in ms
-      const startDate = daysAgo.toMillis(); // 00:00 vor 5 Tagen
-      for (let page = 0; page < 999999; page++) {
-        const url = `/order/sellers/${storeId}/orders?size=200&page=${page}&startDate=${startDate}&endDate=${endDate}&orderByField=PackageLastModifiedDate&orderByDirection=ASC`;
-        const response = await this.client.get(url, this.getHttpConfig(storeId));
-        const responseJson: TrendyolOrderResponseDto = response.data;
-        const data = responseJson.content;
-        data.forEach(order => {
-          ordersDict[`${storeId}_${order.orderNumber}`] = {...order, storeId};
-        });
-        if (data.length == 0){
-          break;
+      let now = DateTime.now().setZone('Europe/Bucharest');
+      for(let i=1; i < 2; i++){
+        // Fünf Tage früher, Mitternacht (erste Minute des Tages)
+        const fiveDaysAgo = now.minus({ days: 5 }).startOf('day');
+
+        const endDate = now.toMillis();         // aktuelle Zeit in ms
+        const startDate = fiveDaysAgo.toMillis(); // 00:00 vor 5 Tagen
+        for (let page = 0; page < 999999; page++) {
+          const url = `/order/sellers/${storeId}/orders?size=200&page=${page}&startDate=${startDate}&endDate=${endDate}&orderByField=PackageLastModifiedDate&orderByDirection=ASC`;
+          const response = await this.client.get(url, this.getHttpConfig(storeId));
+          const responseJson: TrendyolOrderResponseDto = response.data;
+          const data = responseJson.content;
+          data.forEach(order => {
+            ordersDict[`${storeId}_${order.orderNumber}`] = {...order, storeId};
+          });
+          if (data.length == 0){
+            break;
+          }
         }
+        now = fiveDaysAgo;
       }
+      
+      console.log(Object.values(ordersDict).length);
     }
     const orders = Object.values(ordersDict);
-    console.log(`Found ${orders.length} orders for storeIds ${this.storeIds}`);
+    //console.log(`Found ${orders.length} orders for storeIds ${this.storeIds} between ${fiveDaysAgo.toISO()} and ${now.toISO()}`);
     orders.sort((a, b) => a.orderDate - b.orderDate );  // Sortieren nach orderDate aufsteigend
     return orders;
   }
