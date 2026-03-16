@@ -53,13 +53,14 @@ export class TrendyolSmartbillInvoiceAdapter {
         .plus({ months: 1 })
         .set({ day: 2 });
     }
-
+    /*
     // Ensure date is not earlier than March 12
     const minDate = issueDate.set({ month: 3, day: 12 });
 
     if (issueDate < minDate) {
       issueDate = minDate;
     }
+    */
 
     const now = DateTime.now().setZone('Europe/Bucharest');
 
