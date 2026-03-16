@@ -66,6 +66,7 @@ export class TrendyolService {
           const data = responseJson.content;
           data.forEach(order => {
             order.storeFrontCode = storeFrontCode;
+            order.storeId = storeId;
             ordersDict[`${storeId}_${order.orderNumber}`] = {...order, storeId};
           });
           if (data.length == 0){
@@ -89,6 +90,7 @@ export class TrendyolService {
     const data = responseJson.content.at(0)
     if(data !== undefined) {
       data.storeFrontCode = storeFrontCode;
+      data.storeId = storeId;
     }
     return data;
   }
