@@ -77,9 +77,9 @@ export class TrendyolSmartbillInvoiceAdapter {
     const postalCode = requestDto.invoiceAddress.postalCode;
     const postalCodePrefix = postalCode.substring(0,2);
     const sector = SECTOR_DICT[postalCodePrefix];
-    var address = `${requestDto.invoiceAddress.fullAddress}, ${requestDto.invoiceAddress.countyName}`;
-    if(!address.toLocaleLowerCase().includes(requestDto.invoiceAddress.countyName.toLocaleLowerCase())){
-      address = `${address}, ${requestDto.invoiceAddress.countyName}`;
+    var address = `${requestDto.invoiceAddress.fullAddress}, ${requestDto.invoiceAddress.countyName || ""}`;
+    if(!address.toLocaleLowerCase().includes((requestDto.invoiceAddress.countyName || "").toLocaleLowerCase())){
+      address = `${address}, ${requestDto.invoiceAddress.countyName || ""}`;
     }
     if (
       sector !== undefined && !address.toLocaleLowerCase().includes(sector.toLocaleLowerCase()) && requestDto.storeFrontCode === "RO"
@@ -127,7 +127,7 @@ export class TrendyolSmartbillInvoiceAdapter {
             address: address,
             isTaxPayer: requestDto.taxNumber ? true : false,
             city: requestDto.invoiceAddress.city,
-            county: requestDto.invoiceAddress.countyName,
+            county: requestDto.invoiceAddress.countyName || "",
             country: COUNTRY_CODE_TO_COUNTRY_NAME_DICT[requestDto.invoiceAddress.countryCode],
             email: requestDto.customerEmail,
          },
