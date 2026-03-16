@@ -12,20 +12,30 @@ const SECTOR_DICT = {
   "06": "Sector 6",
 }
 
+const COUNTRY_CODE_TO_COUNTRY_NAME_DICT = {
+  "RO": "Romania",
+  "BG": "Bulgaria",
+  "GR": "Greece",
+  "DE": "Germany",
+  "SK": "Slovakia",
+  "CZ": "Czechia",
+  // Add more country codes and names as needed
+};
+
 export class TrendyolSmartbillInvoiceAdapter {
   static toInternal(requestDto: TrendyolOrderDto, seriesName: string): RequestSmartbillInvoiceDto {
-    if (requestDto.invoiceAddress.countryCode !== "RO") {
+    /*if (requestDto.invoiceAddress.countryCode !== "RO") {
       throw new Error(`Nur rumänische Rechnungen sind erlaubt. Der gegebene countryCode war: ${requestDto.invoiceAddress.countryCode}`);
-    }
+    }*/  // Orders from other countries are being handled now.
     requestDto.lines.forEach((product)=>{
-      if (product.vatBaseAmount !== 21.00) {
+      /*if (product.vatBaseAmount !== 21.00) {
         throw new Error(`vatBaseAmount of the product is expected to be 21 NORMALA, it was different, this case hasn't been handled yet: ${product.vatBaseAmount}`);
-      }
-      if (product.tyDiscount > 0) {
-        throw new Error(`tyDiscount of the product is expected to be 0, it was different, this case hasn't been handled yet: ${product.tyDiscount}`);
       }
       if (product.currencyCode !== "RON") {
         throw new Error(`currencyCode of the product is expected to be RON, it was different, this case hasn't been handled yet: ${product.currencyCode}`);
+      }*/  // Orders from other countries are being handled now.
+      if (product.tyDiscount > 0) {
+        throw new Error(`tyDiscount of the product is expected to be 0, it was different, this case hasn't been handled yet: ${product.tyDiscount}`);
       }
     })
     let issueDate = DateTime.fromMillis(requestDto.orderDate)
@@ -42,6 +52,13 @@ export class TrendyolSmartbillInvoiceAdapter {
       issueDate = issueDate
         .plus({ months: 1 })
         .set({ day: 2 });
+    }
+
+    // Ensure date is not earlier than March 12
+    const minDate = issueDate.set({ month: 3, day: 12 });
+
+    if (issueDate < minDate) {
+      issueDate = minDate;
     }
 
     const now = DateTime.now().setZone('Europe/Bucharest');
@@ -65,7 +82,7 @@ export class TrendyolSmartbillInvoiceAdapter {
       address = `${address}, ${requestDto.invoiceAddress.countyName}`;
     }
     if (
-      sector !== undefined && !address.toLocaleLowerCase().includes(sector.toLocaleLowerCase())
+      sector !== undefined && !address.toLocaleLowerCase().includes(sector.toLocaleLowerCase()) && requestDto.storeFrontCode === "RO"
     ){
       address = `${address}, ${sector}`;
     }
@@ -111,20 +128,19 @@ export class TrendyolSmartbillInvoiceAdapter {
             isTaxPayer: requestDto.taxNumber ? true : false,
             city: requestDto.invoiceAddress.city,
             county: requestDto.invoiceAddress.countyName,
-            country: "Romania",
+            country: COUNTRY_CODE_TO_COUNTRY_NAME_DICT[requestDto.invoiceAddress.countryCode],
             email: requestDto.customerEmail,
          },
          issueDate: issueDate.toFormat('yyyy-MM-dd'),
          dueDate: dueDate.toFormat('yyyy-MM-dd'),
          deliveryDate: deliveryDate.toFormat('yyyy-MM-dd'),
          products: [...products, ...discounts],
-         currency: "RON",
+         currency: products[0]?.currency || "RON",
          language: "RO",
          precision: 2,
          seriesName: seriesName,
          aviz: requestDto.orderNumber,
-       
-         observations: `Internal info. TrendyolOrderNumber=${requestDto.orderNumber},TrendyolTrackingCode=${requestDto.cargoTrackingNumber}`,
+         observations: `Internal info. TrendyolOrderNumber=${requestDto.orderNumber},TrendyolTrackingCode=${requestDto.cargoTrackingNumber},TrendyolStoreFrontCode=${requestDto.storeFrontCode}`,
        
          mentions: "",
     };

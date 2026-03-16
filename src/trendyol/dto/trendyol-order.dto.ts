@@ -121,6 +121,10 @@ export class TrendyolOrderDto {
   @ApiProperty()
   @IsNumber()
   storeId: number;
+
+  @ApiProperty()
+  @IsString()
+  storeFrontCode: string;
 }
 
 function Type1(arg0: () => any): (target: TrendyolOrderDto, propertyKey: "shipmentAddress") => void {

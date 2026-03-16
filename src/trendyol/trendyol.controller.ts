@@ -6,11 +6,12 @@ import { TrendyolOrderDto } from './dto/trendyol-order.dto';
 export class TrendyolController {
   constructor(private readonly trendyolService: TrendyolService) {}
 
-  @Get('store-id/:storeId/submit-generated-order-to-trendyol/:smartbillOrderNumber')
+  @Get('store-id/:storeId/store-front-code/:storeFrontCode/submit-generated-order-to-trendyol/:smartbillOrderNumber')
   submitGeneratedOrderToTrendyol(
-    @Param('storeId') storeId: number, 
+    @Param('storeId') storeId: number,
+    @Param('storeFrontCode') storeFrontCode: string,
     @Param('smartbillOrderNumber') smartbillOrderNumber: number) {
-    return this.trendyolService.submitGeneratedOrderToTrendyol(storeId,smartbillOrderNumber);
+    return this.trendyolService.submitGeneratedOrderToTrendyol(storeId, storeFrontCode, smartbillOrderNumber);
   }
 
   @Get('order/smartbill')
@@ -23,25 +24,28 @@ export class TrendyolController {
     return this.trendyolService.generateOrdersForSmartbill(true);
   }
 
-  @Get('store-id/:storeId/order-number/:orderNumber/smartbill')
+  @Get('store-id/:storeId/store-front-code/:storeFrontCode/order-number/:orderNumber/smartbill')
   getOrderForSmartbill(
     @Param('storeId') storeId: number,
-    @Param('orderNumber') orderNumber: string) {
-    return this.trendyolService.getOrderForSmartbill(storeId, orderNumber);
+    @Param('orderNumber') orderNumber: string,
+    @Param('storeFrontCode') storeFrontCode: string) {
+    return this.trendyolService.getOrderForSmartbill(storeId, orderNumber, storeFrontCode);
   }
 
-  @Post('store-id/:storeId/order-number/:orderNumber/smartbill')
+  @Post('store-id/:storeId/store-front-code/:storeFrontCode/order-number/:orderNumber/smartbill')
   generateOrderForSmartbill(
     @Param('storeId') storeId: number,
+    @Param('storeFrontCode') storeFrontCode: string,
     @Param('orderNumber') orderNumber: string) {
-    return this.trendyolService.generateOrderForSmartbill(storeId, orderNumber, true);
+    return this.trendyolService.generateOrderForSmartbill(storeId, orderNumber, storeFrontCode, true);
   }
 
-  @Get('store-id/:storeId/order-number/:orderNumber')
+  @Get('store-id/:storeId/store-front-code/:storeFrontCode/order-number/:orderNumber')
   getOrder(
     @Param('storeId') storeId: number, 
-    @Param('orderNumber') orderNumber: string) {
-    return this.trendyolService.getOrder(storeId, orderNumber);
+    @Param('orderNumber') orderNumber: string,
+    @Param('storeFrontCode') storeFrontCode: string) {
+    return this.trendyolService.getOrder(storeId, orderNumber, storeFrontCode);
   }
 
   @Get('order')

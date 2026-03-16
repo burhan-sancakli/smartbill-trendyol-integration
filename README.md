@@ -61,7 +61,7 @@ The application requires configuration via environment variables.
    - `TRENDYOL_STORE_IDS`: Comma-separated list of Trendyol Store IDs (e.g., `111111,222222`).
 
    **Specific Store Configuration (repeat for each Store ID defined in `TRENDYOL_STORE_IDS`):**
-   - `TRENDYOL_<STORE_ID>_API_STORE_FRONT_CODE`: Store front code (default "RO").
+   - `TRENDYOL_<STORE_ID>_API_STORE_FRONT_CODES`: Store front codes ("RO,BG,GR" etc.).
    - `TRENDYOL_<STORE_ID>_SMARTBILL_SERIES_NAME`: Smartbill invoice series name for this store.
    - `TRENDYOL_<STORE_ID>_API_KEY`: Trendyol API Key for the store.
    - `TRENDYOL_<STORE_ID>_API_SECRET`: Trendyol API Secret for the store.
