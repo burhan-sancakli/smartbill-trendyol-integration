@@ -65,9 +65,14 @@ export class TrendyolService {
           const responseJson: TrendyolOrderResponseDto = response.data;
           const data = responseJson.content;
           data.forEach(order => {
-            order.storeFrontCode = storeFrontCode;
-            order.storeId = storeId;
-            ordersDict[`${storeId}_${order.orderNumber}`] = {...order, storeId};
+            const orderDate = new Date(order.orderDate);
+            const oneHourAgo = Date.now() - (60 * 60 * 1000);
+
+            if (orderDate.getTime() <= oneHourAgo) {
+              order.storeFrontCode = storeFrontCode;
+              order.storeId = storeId;
+              ordersDict[`${storeId}_${order.orderNumber}`] = { ...order, storeId };
+            }
           });
           if (data.length == 0){
             break;
